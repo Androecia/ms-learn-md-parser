@@ -1,0 +1,3 @@
+[submodule "minecraft-creator"]
+	path = minecraft-creator
+	url = https://github.com/MicrosoftDocs/minecraft-creator.git
