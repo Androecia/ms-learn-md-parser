@@ -68,7 +68,7 @@ impl From<String> for Language {
             "cmd" => Language::Cmd,
             "config" => Language::Config,
             "java" | "jsp" => Language::Java,
-            "html" | "xhtml" => Language::Html,
+            "html" /*| "xhtml"*/ => Language::Html,
             "markdown" | "md" | "mkdown" | "mkd" => Language::Markdown,
             "cmake" | "cmake.in" => Language::CMake,
             "powershell" | "ps" => Language::PowerShell,

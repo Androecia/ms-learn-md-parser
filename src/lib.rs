@@ -15,85 +15,41 @@ use metadata::MsMdMetadata;
 
 //TODO  \[!INCLUDE \[.+\]\(.+\)]
 
-#[derive(Debug, Deserialize, Serialize)]
-enum MsMdRegexGroup {
-    #[serde(rename = "comment")]
-    Comment,
-    #[serde(rename = "code_block")]
-    CodeBlock,
-    #[serde(rename = "metadata")]
-    Metadata,
-    #[serde(rename = "md_table")]
-    MdTable,
-    #[serde(rename = "html_table")]
-    HtmlTable,
-    #[serde(rename = "heading")]
-    Heading,
-    #[serde(rename = "code_ext")]
-    CodeExt,
-    #[serde(rename = "multi_line_image_ext")]
-    MultiLineImageExt,
-    #[serde(rename = "single_line_image_ext")]
-    SingleLineImageExt,
-    #[serde(rename = "list")]
-    List,
-    #[serde(rename = "horizontal_line")]
-    HorizontalLine,
-    #[serde(rename = "image")]
-    Image,
-    #[serde(rename = "next_step_action_ext")]
-    NextStepActionExt,
-    #[serde(rename = "op_multi_selector_ext")]
-    OpMultiSelectorExt,
-    #[serde(rename = "op_single_selector_ext")]
-    OpSingleSelectorExt,
-    #[serde(rename = "checklist")]
-    Checklist,
-    #[serde(rename = "alert")]
-    Alert,
-    #[serde(rename = "row")]
-    Row,
-    #[serde(rename = "column")]
-    Column,
-    #[serde(rename = "multi_line_quote")]
-    MultiLineQuote,
-    #[serde(rename = "single_line_quote")]
-    SingleLineQuote,
-    #[serde(rename = "line_break")]
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum MsMarkdownToken {
+    Metadata(MsMdMetadata),
+    Comment(String),
+    Heading {
+        level: u8,
+        text: String,
+    },
+    Code(Code),
+    Table(MdTable),
     LineBreak,
-    #[serde(rename = "text_block")]
-    TextBlock,
+    // TODO: Further parsing for inline types
+    TextBlock {
+        indent: u8,
+        content: String,
+    },
+
+    Row(Vec<MsMdColumn>),
+    //Image(MsMdImage),
+    Alert {
+        indent: u8,
+        content: String,
+        alert_type: AlertType,
+    },
+    Quote {
+        indent: u8,
+        content: String,
+    },
+    List(Vec<MdListItem>),
+    HorizontalLine,
 }
 
-impl Display for MsMdRegexGroup {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            MsMdRegexGroup::Comment => write!(f, "comment"),
-            MsMdRegexGroup::CodeBlock => write!(f, "code_block"),
-            MsMdRegexGroup::Metadata => write!(f, "metadata"),
-            MsMdRegexGroup::MdTable => write!(f, "md_table"),
-            MsMdRegexGroup::HtmlTable => write!(f, "html_table"),
-            MsMdRegexGroup::Heading => write!(f, "heading"),
-            MsMdRegexGroup::CodeExt => write!(f, "code_ext"),
-            MsMdRegexGroup::MultiLineImageExt => write!(f, "multi_line_image_ext"),
-            MsMdRegexGroup::SingleLineImageExt => write!(f, "single_line_image_ext"),
-            MsMdRegexGroup::List => write!(f, "list"),
-            MsMdRegexGroup::HorizontalLine => write!(f, "horizontal_line"),
-            MsMdRegexGroup::Image => write!(f, "image"),
-            MsMdRegexGroup::NextStepActionExt => write!(f, "next_step_action_ext"),
-            MsMdRegexGroup::OpMultiSelectorExt => write!(f, "op_multi_selector_ext"),
-            MsMdRegexGroup::OpSingleSelectorExt => write!(f, "op_single_selector_ext"),
-            MsMdRegexGroup::Checklist => write!(f, "checklist"),
-            MsMdRegexGroup::Alert => write!(f, "alert"),
-            MsMdRegexGroup::Row => write!(f, "row"),
-            MsMdRegexGroup::Column => write!(f, "column"),
-            MsMdRegexGroup::MultiLineQuote => write!(f, "multi_line_quote"),
-            MsMdRegexGroup::SingleLineQuote => write!(f, "single_line_quote"),
-            MsMdRegexGroup::LineBreak => write!(f, "line_break"),
-            MsMdRegexGroup::TextBlock => write!(f, "text_block"),
-        }
-    }
-}
+
 
 #[derive(Debug)]
 pub struct MsMarkdown {
@@ -638,37 +594,86 @@ pub fn remove_space_indentation(text: &str, indent: u8) -> String {
     out.join("\n")
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MsMarkdownToken {
-    Metadata(MsMdMetadata),
-    Comment(String),
-    Heading {
-        level: u8,
-        text: String,
-    },
-    Code(Code),
-    Table(MdTable),
-    LineBreak,
-    // TODO: Further parsing for inline types
-    TextBlock {
-        indent: u8,
-        content: String,
-    },
-
-    Row(Vec<MsMdColumn>),
-    //Image(MsMdImage),
-    Alert {
-        indent: u8,
-        content: String,
-        alert_type: AlertType,
-    },
-    Quote {
-        indent: u8,
-        content: String,
-    },
-    List(Vec<MdListItem>),
+#[derive(Debug, Deserialize, Serialize)]
+enum MsMdRegexGroup {
+    #[serde(rename = "comment")]
+    Comment,
+    #[serde(rename = "code_block")]
+    CodeBlock,
+    #[serde(rename = "metadata")]
+    Metadata,
+    #[serde(rename = "md_table")]
+    MdTable,
+    #[serde(rename = "html_table")]
+    HtmlTable,
+    #[serde(rename = "heading")]
+    Heading,
+    #[serde(rename = "code_ext")]
+    CodeExt,
+    #[serde(rename = "multi_line_image_ext")]
+    MultiLineImageExt,
+    #[serde(rename = "single_line_image_ext")]
+    SingleLineImageExt,
+    #[serde(rename = "list")]
+    List,
+    #[serde(rename = "horizontal_line")]
     HorizontalLine,
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "next_step_action_ext")]
+    NextStepActionExt,
+    #[serde(rename = "op_multi_selector_ext")]
+    OpMultiSelectorExt,
+    #[serde(rename = "op_single_selector_ext")]
+    OpSingleSelectorExt,
+    #[serde(rename = "checklist")]
+    Checklist,
+    #[serde(rename = "alert")]
+    Alert,
+    #[serde(rename = "row")]
+    Row,
+    #[serde(rename = "column")]
+    Column,
+    #[serde(rename = "multi_line_quote")]
+    MultiLineQuote,
+    #[serde(rename = "single_line_quote")]
+    SingleLineQuote,
+    #[serde(rename = "line_break")]
+    LineBreak,
+    #[serde(rename = "text_block")]
+    TextBlock,
 }
+
+impl Display for MsMdRegexGroup {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MsMdRegexGroup::Comment => write!(f, "comment"),
+            MsMdRegexGroup::CodeBlock => write!(f, "code_block"),
+            MsMdRegexGroup::Metadata => write!(f, "metadata"),
+            MsMdRegexGroup::MdTable => write!(f, "md_table"),
+            MsMdRegexGroup::HtmlTable => write!(f, "html_table"),
+            MsMdRegexGroup::Heading => write!(f, "heading"),
+            MsMdRegexGroup::CodeExt => write!(f, "code_ext"),
+            MsMdRegexGroup::MultiLineImageExt => write!(f, "multi_line_image_ext"),
+            MsMdRegexGroup::SingleLineImageExt => write!(f, "single_line_image_ext"),
+            MsMdRegexGroup::List => write!(f, "list"),
+            MsMdRegexGroup::HorizontalLine => write!(f, "horizontal_line"),
+            MsMdRegexGroup::Image => write!(f, "image"),
+            MsMdRegexGroup::NextStepActionExt => write!(f, "next_step_action_ext"),
+            MsMdRegexGroup::OpMultiSelectorExt => write!(f, "op_multi_selector_ext"),
+            MsMdRegexGroup::OpSingleSelectorExt => write!(f, "op_single_selector_ext"),
+            MsMdRegexGroup::Checklist => write!(f, "checklist"),
+            MsMdRegexGroup::Alert => write!(f, "alert"),
+            MsMdRegexGroup::Row => write!(f, "row"),
+            MsMdRegexGroup::Column => write!(f, "column"),
+            MsMdRegexGroup::MultiLineQuote => write!(f, "multi_line_quote"),
+            MsMdRegexGroup::SingleLineQuote => write!(f, "single_line_quote"),
+            MsMdRegexGroup::LineBreak => write!(f, "line_break"),
+            MsMdRegexGroup::TextBlock => write!(f, "text_block"),
+        }
+    }
+}
+
 
 // TODO: Use this with serde when implemented
 /*
@@ -813,7 +818,7 @@ where
     )
 }
 
-// From Deno example
+// From the examples in the deno_core repo. Slightly modified
 fn eval_js<T>(context: &mut JsRuntime, code: &str) -> Result<T, String>
 where
     T: DeserializeOwned,
