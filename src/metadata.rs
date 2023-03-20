@@ -1,9 +1,12 @@
-
 use serde::{Deserialize, Serialize};
 
 /// Struct representing the metadata for a document.
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct MsMdMetadata {
+    /// The page title. This is the page title that's displayed on the browser tab.
+    /// It's the most important metadata for SEO.
+    title: String,
+
     /// The author's GitHub account ID.
     author: String,
 
@@ -35,10 +38,6 @@ pub struct MsMdMetadata {
     #[serde(rename = "ms.topic")]
     ms_topic: Option<String>,
 
-    /// The page title. This is the page title that's displayed on the browser tab.
-    /// It's the most important metadata for SEO.
-    title: String,
-
     /// For writer or team use only. Used for tracking specific docs or sets of content in telemetry tools.
     /// The maximum string value length is 125 characters.
     #[serde(rename = "ms.custom")]
@@ -60,9 +59,6 @@ pub struct MsMdMetadata {
 
     /// Use in your metadata section to prevent the build and publishing process from showing content on search pages.
     /// When you want to use ROBOTS (and yes, it's all capitalized, even though other metadata tags aren't):
-    /// - Add ROBOTS: NOINDEX to your metadata section.
-    /// - NOINDEX causes the asset to not show up in search results.
-    /// - Use NOFOLLOW only when you archive an entire content set.
     robots: Option<Robots>,
 
     /// A list of words in the article that should never be translated (localized).
@@ -72,10 +68,10 @@ pub struct MsMdMetadata {
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Robots {
+    /// Causes the asset to not show up in search results.
     #[serde(rename = "NOINDEX")]
     NoIndex,
+    /// Only when you archive an entire content set.
     #[serde(rename = "NOFOLLOW")]
     NoFollow,
 }
-
-
