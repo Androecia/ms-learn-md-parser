@@ -522,11 +522,7 @@ For example, in the following, only the single instance of `Document` will be ig
 Markdown content within the :::no-loc text="Document":::.  The are multiple instances of Document, document, and documents.
 ```
 
-> [!NOTE]
-> Use `\` to escape special characters:
-> ```markdown
-> Lorem :::no-loc text="Find a \"Quotation\""::: Ipsum.
-> ```
+```
 
 You can also use metadata in the YAML header to mark all instances of a string within the current Markdown file as non-localizable:
 
@@ -579,6 +575,15 @@ The preceding blockquote Markdown text will be rendered as:
 > <js code text>
 > ```
 -->
+
+
+
+
+   > Use `\` to escape special characters:
+   > ```markdown
+   > Lorem :::no-loc text="Find a \"Quotation\""::: Ipsum.
+   > ```
+
 
 ## Selectors
 
@@ -898,6 +903,37 @@ Looking ahead to upcoming releases, we are looking to release our next set of AP
 Scripting is a powerful way to add complex behavior to your experience. It allows for a [professional development environment that includes profiling and hot reloading](./ScriptDeveloperTools.md).
 
 [Get started with scripting](https://aka.ms/startwithmcscript).
+---
+title: Features
+description: Adding Xbox Live features to your game, such as Identity, Social features, Achievements, Cloud Storage, and Multiplayer features; and configuring Custom services to use Xbox Live.
+kindex: Features
+ms.topic: navigation
+layout: LandingPage
+ms.localizationpriority: high
+author: mikehoffms
+ms.author: v-mihof
+ms.date: 11/01/2019
+---
+
+# Features
+
+
+### In this section
+
+|     |     |
+| --- | --- |
+| [Identity](identity/live-identity-nav.md) | User profile, authentication and sign-in, privileges, and privacy settings. |
+| [Player Data](player-data/live-playerdata-nav.md) | Achievements, player stats, leaderboards, and featured stats. |
+| [Social](social/live-social-nav.md) | Friends list (People system), official and in-game clubs, activity feed (presence strings), and reputation. |
+| [Multiplayer](multiplayer/live-multiplayer-nav.md) | Matchmaking, invites, voice and text chat, and networking. |
+| [Cloud Storage](cloud-storage/live-cloud-storage-nav.md) | Includes Connected Storage to store game state, and Title Storage to store player statistics and assets. |
+| [Custom services](custom-services/live-custom-services-nav.md) | Using Xbox Live with your own Web services; and configuring relying parties, single sign-on, and access policies. |
+| [General features](general/live-general-nav.md) | RTA (subscribes to state data, user statistics, and presence), TCUI (shows pre-defined user interface displays), and Xbox Live samples. |
+
+
+### See also
+
+* [Features supported for each developer program](../get-started/join-dev-program/live-feature-comparison-table.md)
 
 ---
 author: mammerla

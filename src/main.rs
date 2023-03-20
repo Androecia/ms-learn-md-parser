@@ -107,14 +107,50 @@ pub struct MsMarkdown {
 pub enum MsMarkdownToken {
     Metadata(MsMdMetadata),
     Comment(String),
-    Heading(MarkdownHeading),
+    Heading {
+        level: u8,
+        text: String,
+    },
     Code(MsMarkdownCode),
-    Table(Vec<HashMap<String, String>>),
+    Table(MdTable),
     LineBreak,
     // TODO: Further parsing for inline types
-    TextBlock(String),
+    TextBlock {
+        indent: u8,
+        content: String,
+    },
     Row(Vec<MsMdColumn>),
+    //Image(MsMdImage),
+    Alert {
+        indent: u8,
+        content: String,
+        alert_type: AlertType,
+    },
+    Quote {
+        indent: u8,
+        content: String,
+    },
+    List(Vec<MdListItem>),
+    HorizontalLine,
 }
+
+#[derive(Debug)]
+pub enum MdTable {
+    Unnamed(Vec<Vec<String>>),
+    Named(Vec<HashMap<String, String>>),
+}
+
+#[derive(Debug)]
+pub struct MdQuote {
+    pub indent: u8,
+    pub text: String,
+}
+#[derive(Debug)]
+pub struct MdTextBlock {
+    pub indent: u8,
+    pub text: String,
+}
+
 #[derive(Debug)]
 pub enum MarkdownTableType {
     String,
@@ -127,7 +163,7 @@ use serde_yaml;
 fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
     let text = fs::read_to_string(path).unwrap();
 
-    const REGEXP: &str = r#"/(?<comment>^[ ]*?<!-{2,3}(?:[\s\S]*?)-{2,3}>$)|(?<code_block>[ ]*?`{1,4}[a-zA-Z]*?\n(?:[^`]+) *?`{1,4}\n)|(?<metadata>(?:^---\n)(?:^.+:.+\n)+(?:^---$))|(?<md_table>\|(?:.+)\|\n\|(?: ?:?-+:? ?\|)+\n(?:(?:\|(?:.+)\|)+\n)+)|(?<html_table>^<table[\s\w\W]*(:?^<\/table>))|(?<heading>(?:^#{1,6}\s)(?:.*?).$)|(?<code_ext>(?:^[ ]*?:::code.+:::))|(?<multi_line_image_ext>^:::image.+:::\n(?:.+\n)+(?:^[ ]*?:::image-end:::$))|(?<single_line_image_ext>^[ ]*?:::image.+:::$)|(?<list>^[ ]*?(?:(?:\d\.)|(?:[-*])) .+\n(?:^[ ]*?(?:(?:\d\.)|(?:[-*])) .+\n)*)|(?<horizontal_line>^-{3}\n)|(?<image>(?:^[ ]*?!\[.*?\]\(.*?\)))|(?<next_step_action_ext>^[ ]*?> \[!div class="nextstepaction"\]\n(?:^[ ]*?> \[.+\]\(.+\)\n)+)|(?<op_multi_selector_ext>^[ ]*?> \[!div class="op_multi_selector".*?\]\s(?:> - \[.+\]\(.+\)\n)+)|(?<op_single_selector_ext>^> \[!div class="op_single_selector"\]\n(> - \[.+\]\(.+\)\n)+)|(?<checklist>^[ ]*?> \[!div class="checklist"\]\n(?:(?:^[ ]*?> [-*] .+\n)|(^[ ]*?>\n))+)|(?<alert>(?:^[ ]*?>[^ ]!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?>[^ ].+\n)|(?:[ ]*?>\n))+)|(^[ ]*?>[ ]*?\[!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?> .+\n)|(?:[ ]*?>\n))+))|(?<row>^:::row(?:[\s\S]*?)row-end:::$)|(?<column>^:::column(?:[\S\s]*?)column-end:::.$)|(?<multi_line_quote>^[ ]?>[ ]?.+\n(?:(?:[ ]*?>[ ]?.+\n)|(?:[ ]*?>\n))+)|(?<single_line_quote>^[ ]*?>[ ]?.+)|(?<line_break>\n{2})|(?<text_block>^.+$)/gm"#;
+    const REGEXP: &str = r#"/(?<comment>^[ ]*?<!-{2,3}(?:[\s\S]*?)-{2,3}>$)|(?<code_block>[ ]*?`{1,4}[a-zA-Z]*?\n(?:[^`]+) *?`{1,4}\n)|(?<metadata>(?:^---\n)(?:^.+:.+\n)+(?:^---$))|(?<md_table>\|(?:.+)\|\n\|(?: ?:?-+:? ?\|)+\n(?:(?:\|(?:.+)\|)+\n)+)|(?<html_table>^<table[\s\w\W]*(:?^<\/table>))|(?<heading>(?:^#{1,6}\s)(?:.*?).$)|(?<code_ext>(?:^[ ]*?:::code.+:::))|(?<multi_line_image_ext>^:::image.+:::\n(?:.+\n)+(?:^[ ]*?:::image-end:::$))|(?<single_line_image_ext>^[ ]*?:::image.+:::$)|(?<list>^[ ]*?(?:(?:\d\.)|(?:[+\-*])) .+\n(?:^[ ]*?(?:(?:\d\.)|(?:[-+*])) .+\n)*)|(?<horizontal_line>^-{3}\n)|(?<image>(?:^[ ]*?!\[.*?\]\(.*?\)))|(?<next_step_action_ext>^[ ]*?> \[!div class="nextstepaction"\]\n(?:^[ ]*?> \[.+\]\(.+\)\n)+)|(?<op_multi_selector_ext>^[ ]*?> \[!div class="op_multi_selector".*?\]\s(?:> - \[.+\]\(.+\)\n)+)|(?<op_single_selector_ext>^> \[!div class="op_single_selector"\]\n(> - \[.+\]\(.+\)\n)+)|(?<checklist>^[ ]*?> \[!div class="checklist"\]\n(?:(?:^[ ]*?> [-*] .+\n)|(^[ ]*?>\n))+)|(?<alert>(?:^[ ]*?>[^ ]!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?>[^ ].+\n)|(?:[ ]*?>\n))+)|(^[ ]*?>[ ]*?\[!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?> .+\n)|(?:[ ]*?>\n))+))|(?<row>^:::row(?:[\s\S]*?)row-end:::$)|(?<column>^:::column(?:[\S\s]*?)column-end:::.$)|(?<multi_line_quote>^[ ]*?>[ ]?.+\n(?:(?:[ ]*?>[ ]?.+\n)|(?:[ ]*?>\n))+)|(?<single_line_quote>^[ ]*?>[ ]?.+)|(?<line_break>\n{2})|(?<text_block>^.+$)/gm"#;
 
     let matches = ecma_regex_match_groups::<MsMarkdownGroup>(&text, REGEXP, None).unwrap();
 
@@ -177,7 +213,7 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
                     .trim_end_matches(|c: char| c == '#' || c == ' ')
                     .to_string();
 
-                tokens.push(MsMarkdownToken::Heading(MarkdownHeading { level, text }));
+                tokens.push(MsMarkdownToken::Heading { level, text });
             }
 
             MsMarkdownGroup::CodeBlock => {
@@ -191,10 +227,18 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
 
                 // TODO PARSE IF JSONC JSON or json jsonc etc
 
+                // indent  spaces
+
+                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
                 let code = code.name("code").unwrap().as_str().to_string();
+
+                // remove the indentation from the code
+
                 tokens.push(MsMarkdownToken::Code(MsMarkdownCode {
+                    indent: indentation as u8,
                     language: lang,
-                    data: Some(code),
+                    data: Some(remove_indentation(&code, indentation as u8)),
                     highlight: None,
                     id: None,
                     interactive: None,
@@ -211,7 +255,14 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
                 let re_id = Regex::new(r#"id="(?P<data>.*?)""#).unwrap();
                 let re_highlight = Regex::new(r#"highlight="(?P<data>.*?)""#).unwrap();
                 let re_interactive = Regex::new(r#"interactive="(?P<data>.*?)""#).unwrap();
+
+                //                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
+                /// get indent spaces ` `
+                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
                 let mut out = MsMarkdownCode {
+                    indent: indentation as u8,
                     language: None,
                     data: None,
                     source: None,
@@ -296,6 +347,39 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
                 let headers_line = lines.remove(0);
                 let headers = headers_line.split("|").collect::<Vec<_>>();
 
+                // Check if all headers are empty
+
+                let is_headers_empty = headers.iter().all(|x| x.trim().is_empty());
+
+                if is_headers_empty {
+                    let mut table_data: Vec<Vec<String>> = Vec::new();
+
+                    for line in lines {
+                        if line.trim().is_empty()
+                            || line.starts_with("|--")
+                            || line.starts_with("|:--")
+                        {
+                            continue;
+                        }
+
+                        let row_data = line.split("|").collect::<Vec<_>>();
+                        let mut row_map = Vec::new();
+
+                        for cell in row_data.iter() {
+                            // check if both are empty if so continue
+                            if cell.trim().is_empty() {
+                                continue;
+                            }
+
+                            row_map.push(cell.trim().to_string());
+                        }
+
+                        table_data.push(row_map);
+                    }
+
+                    tokens.push(MsMarkdownToken::Table(MdTable::Unnamed(table_data)));
+                    continue;
+                }
                 let mut table_data = Vec::new();
 
                 for line in lines {
@@ -318,8 +402,7 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
 
                     table_data.push(row_map);
                 }
-
-                tokens.push(MsMarkdownToken::Table(table_data));
+                tokens.push(MsMarkdownToken::Table(MdTable::Named(table_data)));
             }
 
             MsMarkdownGroup::HtmlTable => {
@@ -348,12 +431,11 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
                         for (header, cell) in headers.iter().zip(row_data.iter()) {
                             row_map.insert(header.clone(), cell.clone());
                         }
-
                         table_data.push(row_map);
                     }
                 }
-
-                tokens.push(MsMarkdownToken::Table(table_data))
+                // TODO: Unnamed table
+                tokens.push(MsMarkdownToken::Table(MdTable::Named(table_data)));
             }
 
             MsMarkdownGroup::LineBreak => {
@@ -361,7 +443,27 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
             }
 
             MsMarkdownGroup::TextBlock => {
-                tokens.push(MsMarkdownToken::TextBlock(m.text.to_string()));
+                let indent_level = m.text.chars().take_while(|c| c.is_whitespace()).count();
+
+                let text_block = m.text.trim().to_string();
+
+                if text_block.is_empty() {
+                    continue;
+                }
+                // get indent level
+
+                let text_block = text_block.trim().to_string();
+
+                let text_block = text_block
+                    .lines()
+                    .map(|line| line.trim())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                tokens.push(MsMarkdownToken::TextBlock {
+                    indent: indent_level as u8,
+                    content: text_block,
+                });
             }
 
             MsMarkdownGroup::Row => {
@@ -397,6 +499,177 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
                     tokens.push(MsMarkdownToken::Row(row_data));
                 }
             }
+            /*
+                        MsMarkdownGroup::SingleLineImageExt => {
+                            // an  or group with each type="([^"]*)" source="([^"]*)" alt-text="([^"]*)" in (?s):::image :::
+
+                            // type regex
+                            let type_regex = Regex::new(r#"(?s)type="([^"]*)""#).unwrap();
+                            // source regex
+                            let source_regex = Regex::new(r#"(?s)source="([^"]*)""#).unwrap();
+                            // alt-text regex
+                            let alt_text_regex = Regex::new(r#"(?s)alt-text="([^"]*)""#).unwrap();
+
+                            // border
+
+                            let border_regex = Regex::new(r#"(?s)border="([^"]*)""#).unwrap();
+
+                            /*pub struct MsMdImage {
+                                pub alt_text: String,
+                                pub source: String,
+                                pub image_type: Option<ImageType>,
+                            }
+
+                            pub enum ImageType {
+                                Complex,
+                                Icon,
+                                Content,
+                            } */
+
+                            // get type exists then make enum variant else None
+
+                            let image_type = match type_regex.captures(&m.text) {
+                                Some(captures) => match captures.get(1).unwrap().as_str() {
+                                    "complex" => Some(ImageType::Complex),
+                                    "icon" => Some(ImageType::Icon),
+                                    "content" => Some(ImageType::Content),
+                                    _ => None,
+                                },
+                                None => None,
+                            };
+
+                            let out = MsMdImage {
+                                image_type,
+                                source: source_regex
+                                    .captures(&m.text)
+                                    .unwrap()
+                                    .get(1)
+                                    .unwrap()
+                                    .as_str()
+                                    .to_string(),
+                                alt_text: alt_text_regex
+                                    .captures(&m.text)
+                                    .unwrap()
+                                    .get(1)
+                                    .unwrap()
+                                    .as_str()
+                                    .to_string(),
+                                // border may not exist  if it does not it is false
+                                border: match border_regex.captures(&m.text) {
+                                    Some(captures) => match captures.get(1).unwrap().as_str() {
+                                        "true" => true,
+                                        "false" => false,
+                                        _ => false,
+                                    },
+                                    None => false,
+                                },
+
+                                description: None,
+                            };
+                        }
+
+                        MsMarkdownGroup::MultiLineImageExt => {}
+            */
+            MsMarkdownGroup::Alert => {
+                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
+                let alert_type_regex = Regex::new(r#"(?s)\[!([a-zA-Z]+)\]"#).unwrap();
+
+                let alert_type = match alert_type_regex.captures(&m.text) {
+                    Some(captures) => {
+                        match captures.get(1).unwrap().as_str().to_lowercase().as_str() {
+                            "note" => AlertType::Note,
+                            "tip" => AlertType::Tip,
+                            "important" => AlertType::Important,
+                            "caution" => AlertType::Caution,
+                            "warning" => AlertType::Warning,
+                            _ => panic!("unhandled alert type"),
+                        }
+                    }
+                    None => panic!("no alert type"),
+                };
+
+                // get the content of the alert, remove the first line which is the alert type make sure to remove the > from the start of the line and trim the line
+
+                let content = remove_indentation(&m.text, indentation as u8)
+                    .lines()
+                    .skip(1)
+                    .map(|line| line.trim().trim_start_matches(">").trim())
+                    .collect::<Vec<&str>>()
+                    .join("\n");
+
+                tokens.push(MsMarkdownToken::Alert {
+                    alert_type,
+                    content,
+                    indent: indentation as u8,
+                });
+            }
+            // quote multiline
+            MsMarkdownGroup::MultiLineQuote => {
+                // get the content of the quote, remove the first line which is the quote type make sure to remove the > from the start of the line and trim the line
+
+                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
+                let content = remove_indentation(&m.text, indentation as u8)
+                    .lines()
+                    .map(|line| line.trim_start_matches(">").trim())
+                    .collect::<Vec<&str>>()
+                    .join("\n");
+
+                tokens.push(MsMarkdownToken::Quote {
+                    content,
+                    indent: indentation as u8,
+                });
+            }
+            // quote single line
+            MsMarkdownGroup::SingleLineQuote => {
+                // get the content of the quote, remove the first line which is the quote type make sure to remove the > from the start of the line and trim the line
+
+                let content = m
+                    .text
+                    .lines()
+                    .map(|line| line.trim_start_matches(">").trim())
+                    .collect::<Vec<&str>>()
+                    .join("\n");
+
+                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
+                tokens.push(MsMarkdownToken::Quote {
+                    content,
+                    indent: indentation as u8,
+                });
+            }
+            // List with nests
+            MsMarkdownGroup::List => {
+                let mut items = vec![];
+
+                for line in m.text.lines() {
+                    let indentation = line.find(|c: char| !c.is_whitespace()).unwrap();
+
+                    let list_type = if line.starts_with(|c: char| c.is_digit(10)) {
+                        OrderType::Ordered
+                    } else {
+                        OrderType::Unordered
+                    };
+
+                    let list_start_regex = Regex::new(r#"(?m)^(?:(?:\d+\.)|[-*])"#).unwrap();
+
+                    let line = list_start_regex.replace(&line.trim_start(), "");
+
+                    let content = line.trim();
+
+                    items.push(MdListItem {
+                        indent: indentation as u8,
+                        list_type,
+                        content: content.to_string(),
+                    });
+                }
+
+                tokens.push(MsMarkdownToken::List(items));
+            }
+            MsMarkdownGroup::HorizontalLine => {
+                tokens.push(MsMarkdownToken::HorizontalLine);
+            }
             _ => {
                 println!("unhandled group {:?}", m.group);
             }
@@ -405,13 +678,51 @@ fn parse_ms_md_from_file(path: &Path) -> Vec<MsMarkdownToken> {
     tokens
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct MdListItem {
+    indent: u8,
+    list_type: OrderType,
+    content: String,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum OrderType {
+    Ordered,
+    Unordered,
+}
 #[derive(Debug)]
 pub struct MsMdColumn {
     pub span: Option<u8>,
     pub content: String,
 }
+#[derive(Debug)]
+pub enum AlertType {
+    Note,
+    Tip,
+    Important,
+    Caution,
+    Warning,
+}
+#[derive(Debug)]
+pub struct MsMdAlert {
+    pub indent: u8,
+    pub alert_type: AlertType,
+    pub content: String,
+}
 
+fn remove_indentation(text: &str, indent: u8) -> String {
+    let mut out = vec![];
 
+    for line in text.lines() {
+        let regex = Regex::new(&format!("^ {{{}}}", indent)).unwrap();
+
+        let line = regex.replace(&line, "");
+
+        out.push(line.to_string());
+    }
+
+    out.join("\n")
+}
 
 #[test]
 fn test_parse_ms_md() {
@@ -424,7 +735,7 @@ fn test_parse_ms_md() {
     fs::write("md_test_parse_output.rs", format!("{:#?}", &tokens)).unwrap();
 
     for i in tokens {
-       // println!("{:?}", i);
+        // println!("{:?}", i);
     }
 }
 
@@ -532,32 +843,24 @@ pub struct MsMarkdownCode {
     pub id: Option<String>,
     pub highlight: Option<String>,
     pub interactive: Option<String>,
+
+    pub indent: u8,
 }
 
 impl MsMarkdownCode {
-    pub fn new() -> Self {
-        Self {
-            data: None,
-            language: None,
-            source: None,
-            range: None,
-            id: None,
-            highlight: None,
-            interactive: None,
-        }
-    }
-
     pub fn get_source(&self) -> Option<&str> {
         self.source.as_deref()
     }
 }
-
-pub struct MsDocMarkdownImage {
+#[derive(Debug)]
+pub struct MsMdImage {
     pub alt_text: String,
     pub source: String,
-    pub image_type: ImageType,
+    pub image_type: Option<ImageType>,
+    pub border: bool,
+    pub description: Option<String>,
 }
-
+#[derive(Debug)]
 pub enum ImageType {
     Complex,
     Icon,
@@ -610,7 +913,7 @@ fn ecma_regex_match_groups<T>(
 where
     T: DeserializeOwned,
 {
-    /// Initialize the runtime if it is not provided
+    // Initialize the runtime if it is not provided
     let mut runtime = runtime.unwrap_or_else(|| JsRuntime::new(Default::default()));
     /// The match code that collects the matches
     const CODE:&str = "let matches = [];for (let match of text.matchAll(regex)) if (match.groups) for (let group of Object.keys(match.groups) ) {if (!match.groups[group]) continue; matches.push({group:group, text:match.groups[group]})};matches";
@@ -628,10 +931,7 @@ where
 
 use scraper::{Html, Selector};
 
-
-fn main() {
-
-}
+fn main() {}
 
 use crate::serde::de::DeserializeOwned;
 fn eval<T>(context: &mut JsRuntime, code: &str) -> Result<T, String>
