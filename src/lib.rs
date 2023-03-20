@@ -149,7 +149,7 @@ impl From<&Path> for MsMarkdown {
 
                     //                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
 
-                    /// get indent spaces ` `
+                    // get indent spaces ` `
                     let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
 
                     let mut out = Code {
