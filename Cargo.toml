@@ -2,6 +2,8 @@
 name = "ms-learn-md-parser"
 version = "0.0.1"
 edition = "2021"
+description = "A parser for Microsoft Learn markdown files."
+license = "MIT"
 
 [lib]
 name = "ms_doc_md_parser"
