@@ -1,14 +1,11 @@
 [package]
-name = "ms-doc-md-parser"
+name = "ms-learn-md-parser"
 version = "0.0.1"
 edition = "2021"
-
 
 [lib]
 name = "ms_doc_md_parser"
 path = "src/lib.rs"
-
-
 
 [dependencies]
 deno_core = "0.175.0"
