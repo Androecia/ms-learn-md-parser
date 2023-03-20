@@ -1,17 +1,18 @@
 [package]
 name = "ms-doc-md-parser"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "ms_doc_md_parser"
+path = "src/lib.rs"
+
+
 
 [dependencies]
 deno_core = "0.175.0"
-fancy-regex = "0.11.0"
-lazy_static = "1.4.0"
-logos = "0.12.1"
 regex = "1.7.1"
-ron = "0.8.0"
 scraper = "0.15.0"
 serde = { version = "1.0.157", features = ["derive"] }
 serde_yaml = "0.9.19"
