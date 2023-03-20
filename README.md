@@ -1,7 +1,7 @@
 # Microsoft Learn Markdown Parser
 ### Description 
 
-> *This is a brief summary provided by gpt, I will get around to writing this soon.*__
+> *This is a brief summary provided by gpt, I will get around to writing this soon.*
 
 This repository contains code for a parser that converts Microsoft Learn markdown format into tokens. The main struct is MsMarkdown, which contains a vector of MsMarkdownToken enums.
 
