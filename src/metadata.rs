@@ -5,66 +5,73 @@ use serde::{Deserialize, Serialize};
 pub struct MsMdMetadata {
     /// The page title. This is the page title that's displayed on the browser tab.
     /// It's the most important metadata for SEO.
-    title: String,
+    pub title: String,
 
     /// The author's GitHub account ID.
-    author: String,
+    pub author: Option<String>,
 
     /// A summary of the content. 75-300 characters.
-    description: Option<String>,
+    pub description: Option<String>,
 
-    /// The author's Microsoft alias, without "@microsoft.com".
+    /// The author's Microsoft alias, without "@mvbcgicrosoft.com".
     /// Identifies the article's owner.
     #[serde(rename = "ms.author")]
-    ms_author: String,
+    pub ms_author: Option<String>,
 
     /// A date in the format MM/DD/YYYY. Displayed on the published page
     /// to indicate the last time the article was substantially edited
     /// or guaranteed fresh.
     #[serde(rename = "ms.data")]
-    ms_date: Option<String>,
+    pub ms_date: Option<String>,
 
     /// The service identifier. Used for issue triage and reporting.
     /// Generally, use for cloud applications.
     #[serde(rename = "ms.service")]
-    ms_service: Option<String>,
+    pub ms_service: Option<String>,
 
     /// The product identifier. Used for issue triage and reporting.
     /// Generally, use for on-premises servers and applications.
     #[serde(rename = "ms.prod")]
-    ms_prod: Option<String>,
+    pub ms_prod: Option<String>,
 
     /// The type of content for reporting purposes.
     #[serde(rename = "ms.topic")]
-    ms_topic: Option<String>,
+    pub ms_topic: Option<String>,
 
     /// For writer or team use only. Used for tracking specific docs or sets of content in telemetry tools.
     /// The maximum string value length is 125 characters.
     #[serde(rename = "ms.custom")]
-    ms_custom: Option<String>,
+    pub ms_custom: Option<String>,
 
     /// The Microsoft alias of a person who reviews the content.
     #[serde(rename = "ms.reviewer")]
-    ms_reviewer: Option<String>,
+    pub ms_reviewer: Option<String>,
 
     /// The more granular service to which the content belongs. Only use if `ms.service` is also used.
     /// This attribute is a way to drill down further in reporting for a given `ms.service`.
     #[serde(rename = "ms.subservice")]
-    ms_subservice: Option<String>,
+  pub   ms_subservice: Option<String>,
 
     /// The technology to which the content belongs. Only use if `ms.prod` is also used.
     /// This attribute is a way to drill down further in reporting for a given `ms.prod`.
     #[serde(rename = "ms.technology")]
-    technology: Option<String>,
+    pub technology: Option<String>,
 
     /// Use in your metadata section to prevent the build and publishing process from showing content on search pages.
     /// When you want to use ROBOTS (and yes, it's all capitalized, even though other metadata tags aren't):
-    robots: Option<Robots>,
+    pub robots: Option<Robots>,
 
     /// A list of words in the article that should never be translated (localized).
     /// Use this metadata to prevent "overlocalization."
     #[serde(rename = "no-loc")]
-    no_loc: Option<Vec<String>>,
+    pub no_loc: Option<Vec<String>>,
+
+    // TODO: parse the uuid
+    /// The asset ID for the article. This is a GUID that's used to identify the article.
+    #[serde(rename = "assetID")]
+    pub asset_id: Option<String>,
+
+    pub permalink: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Robots {
