@@ -57,8 +57,8 @@ impl MsMarkdown {
         Self { tokens }
     }
 
-    pub  fn get_metadata(&self) -> Option<&MsMdMetadata> {
-      // return first token if it is metadata
+    pub fn get_metadata(&self) -> Option<&MsMdMetadata> {
+        // return first token if it is metadata
 
         if let Some(MsMarkdownToken::Metadata(metadata)) = self.tokens.get(0) {
             return Some(metadata);
@@ -67,15 +67,14 @@ impl MsMarkdown {
         None
     }
 
-    pub fn parse_inline(text: &str) -> Self{
-
+    pub fn parse_inline(text: &str) -> Self {
         let text = text.to_string();
 
         let configuration = configuration::ConfigurationBuilder::new().build();
 
-        let text = format_text(&text, &configuration,|_, _, _| {
-            Ok(None)
-        } ).unwrap().unwrap();
+        let text = format_text(&text, &configuration, |_, _, _| Ok(None))
+            .unwrap()
+            .unwrap();
 
         const REGEXP: &str = r#"/(?<comment>^[ ]*?<!-{2,3}(?:[\s\S]*?)-{2,3}>$)|(?<code_block>[ ]*?`{1,4}[a-zA-Z]*?\n(?:[^`]+) *?`{1,4}\n)|(?<metadata>(?:^---\n)(?:\s|(^.+:.+\n))+(?:^---$))|(?<md_table>\|(?:.+)\|\s+\|(?: ?:?-+:? ?\|)+\s+(?:(?:\|(?:.+)\|)+\s*)+)|(?<html_table>^<table[\s\w\W]*(:?^<\/table>))|(?<heading>(?:^#{1,6}\s)(?:.*?).$)|(?<code_ext>(?:^[ ]*?:::code.+:::))|(?<multi_line_image_ext>^:::image.+:::\n(?:.+\n)+(?:^[ ]*?:::image-end:::$))|(?<single_line_image_ext>^[ ]*?:::image.+:::$)|(?<list>^[ ]*?(?:(?:\d\.)|(?:[+\-*])) .+\n(?:^[ ]*?(?:(?:\d\.)|(?:[-+*])) .+\n)*)|(?<horizontal_line>^-{3}\n)|(?<image>(?:^[ ]*?!\[.*?\]\(.*?\)))|(?<next_step_action_ext>^[ ]*?> \[!div class="nextstepaction"\]\n(?:^[ ]*?> \[.+\]\(.+\)\n)+)|(?<op_multi_selector_ext>^[ ]*?> \[!div class="op_multi_selector".*?\]\s(?:> - \[.+\]\(.+\)\n)+)|(?<op_single_selector_ext>^> \[!div class="op_single_selector"\]\n(> - \[.+\]\(.+\)\n)+)|(?<checklist>^[ ]*?> \[!div class="checklist"\]\n(?:(?:^[ ]*?> [-*] .+\n)|(^[ ]*?>\n))+)|(?<alert>(?:^[ ]*?>[^ ]!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?>[^ ].+\n)|(?:[ ]*?>\n))+)|(^[ ]*?>[ ]*?\[!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?> .+\n)|(?:[ ]*?>\n))+))|(?<row>^:::row(?:[\s\S]*?)row-end:::$)|(?<column>^:::column(?:[\S\s]*?)column-end:::.$)|(?<multi_line_quote>^[ ]*?>[ ]?.+\n(?:(?:[ ]*?>[ ]?.+\n)|(?:[ ]*?>\n))+)|(?<single_line_quote>^[ ]*?>[ ]?.+)|(?<line_break>\n{2})|(?<text_block>^.+$)/gm"#;
 
@@ -555,23 +554,16 @@ impl MsMarkdown {
             }
         }
         MsMarkdown { tokens }
+    }
 }
-}
 
-
-
-impl
-From<&Path> for MsMarkdown {
+impl From<&Path> for MsMarkdown {
     fn from(path: &Path) -> Self {
         let text = fs::read_to_string(path).unwrap();
-
         let configuration = configuration::ConfigurationBuilder::new().build();
-
-      v
         const REGEXP: &str = r#"/(?<comment>^[ ]*?<!-{2,3}(?:[\s\S]*?)-{2,3}>$)|(?<code_block>[ ]*?`{1,4}[a-zA-Z]*?\n(?:[^`]+) *?`{1,4}\n)|(?<metadata>(?:^---\n)(?:\s|(^.+:.+\n))+(?:^---$))|(?<md_table>\|(?:.+)\|\s+\|(?: ?:?-+:? ?\|)+\s+(?:(?:\|(?:.+)\|)+\s*)+)|(?<html_table>^<table[\s\w\W]*(:?^<\/table>))|(?<heading>(?:^#{1,6}\s)(?:.*?).$)|(?<code_ext>(?:^[ ]*?:::code.+:::))|(?<multi_line_image_ext>^:::image.+:::\n(?:.+\n)+(?:^[ ]*?:::image-end:::$))|(?<single_line_image_ext>^[ ]*?:::image.+:::$)|(?<list>^[ ]*?(?:(?:\d\.)|(?:[+\-*])) .+\n(?:^[ ]*?(?:(?:\d\.)|(?:[-+*])) .+\n)*)|(?<horizontal_line>^-{3}\n)|(?<image>(?:^[ ]*?!\[.*?\]\(.*?\)))|(?<next_step_action_ext>^[ ]*?> \[!div class="nextstepaction"\]\n(?:^[ ]*?> \[.+\]\(.+\)\n)+)|(?<op_multi_selector_ext>^[ ]*?> \[!div class="op_multi_selector".*?\]\s(?:> - \[.+\]\(.+\)\n)+)|(?<op_single_selector_ext>^> \[!div class="op_single_selector"\]\n(> - \[.+\]\(.+\)\n)+)|(?<checklist>^[ ]*?> \[!div class="checklist"\]\n(?:(?:^[ ]*?> [-*] .+\n)|(^[ ]*?>\n))+)|(?<alert>(?:^[ ]*?>[^ ]!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?>[^ ].+\n)|(?:[ ]*?>\n))+)|(^[ ]*?>[ ]*?\[!(?:(?:[Nn][Oo][Tt][Ee])|(?:[Tt][Ii][Pp])|(?:[Ii][Mm][Pp][Oo][Rr][Tt][Aa][Nn][Tt])|(?:[Cc][Aa][Uu][Tt][Ii][Oo][Nn])|(?:[Ww][Aa][Rr][Nn][Ii][Nn][Gg]))\]\n(?:(?:[ ]*?> .+\n)|(?:[ ]*?>\n))+))|(?<row>^:::row(?:[\s\S]*?)row-end:::$)|(?<column>^:::column(?:[\S\s]*?)column-end:::.$)|(?<multi_line_quote>^[ ]*?>[ ]?.+\n(?:(?:[ ]*?>[ ]?.+\n)|(?:[ ]*?>\n))+)|(?<single_line_quote>^[ ]*?>[ ]?.+)|(?<line_break>\n{2})|(?<text_block>^.+$)/gm"#;
 
         let matches = ecma_regex_match_groups::<MsMdRegexGroup>(&text, REGEXP, None).unwrap();
-
         let mut tokens = Vec::new();
 
         for m in matches {
@@ -588,11 +580,9 @@ From<&Path> for MsMarkdown {
                             .trim()
                             .to_string(),
                     };
-
                     let metadata = serde_yaml::from_str(&m.text).unwrap();
                     tokens.push(MsMarkdownToken::Metadata(metadata));
                 }
-
                 MsMdRegexGroup::Comment => {
                     // extract the comment its like an html comment with regex
                     // <!-- comment -->
@@ -605,7 +595,6 @@ From<&Path> for MsMarkdown {
                         .as_str();
                     tokens.push(MsMarkdownToken::Comment(comment.to_string()));
                 }
-
                 MsMdRegexGroup::Heading => {
                     // extract the heading
                     let heading = Regex::new(r"^(?P<level>#{1,6})\s+(?P<text>.*)").unwrap();
@@ -1221,9 +1210,9 @@ pub enum MdTable {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MdListItem {
-   pub indent: u8,
-   pub list_type: ListOrderType,
-   pub content: String,
+    pub indent: u8,
+    pub list_type: ListOrderType,
+    pub content: String,
 }
 
 #[derive(Debug, PartialEq, Clone)]
