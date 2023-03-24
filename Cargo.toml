@@ -10,7 +10,7 @@ name = "ms_doc_md_parser"
 path = "src/lib.rs"
 
 [dependencies]
-deno_core = "0.175.0"
+deno_core = "0.177.0"
 dprint-plugin-markdown = "0.15.2"
 html2md = "0.2.14"
 regex = "1.7.1"

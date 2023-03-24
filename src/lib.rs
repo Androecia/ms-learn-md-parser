@@ -555,6 +555,11 @@ impl MsMarkdown {
         }
         MsMarkdown { tokens }
     }
+
+
+
+
+
 }
 
 impl From<&Path> for MsMarkdown {
@@ -1314,12 +1319,17 @@ where
     )
 }
 
+use deno_core::ModuleCode;
+
 // From the examples in the deno_core repo. Slightly modified
 fn eval_js<T>(context: &mut JsRuntime, code: &str) -> Result<T, String>
 where
     T: DeserializeOwned,
 {
-    let res = context.execute_script("Regex Group", code);
+
+
+
+    let res = context.execute_script("Regex Group", ModuleCode::from(code.to_string()));
     match res {
         Ok(global) => {
             let scope = &mut context.handle_scope();
