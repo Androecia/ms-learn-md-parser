@@ -19,6 +19,6 @@ It covers the main data structures of this format that relate to data structure 
 
 These are the reference links for the syntax of the markdown format.
 
-- [Link Syntax][https://learn.microsoft.com/en-us/contribute/how-to-write-links]
-- [Code Syntax][https://learn.microsoft.com/en-us/contribute/code-in-docs]
-- [Markdown Reference][https://learn.microsoft.com/en-us/contribute/markdown-reference]
+- (Link Syntax)[https://learn.microsoft.com/en-us/contribute/how-to-write-links]
+- (Code Syntax)[https://learn.microsoft.com/en-us/contribute/code-in-docs]
+- (Markdown Reference)[https://learn.microsoft.com/en-us/contribute/markdown-reference]
