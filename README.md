@@ -15,7 +15,7 @@ This is not a complete parser for the learn documents as noted by the 0.0.1 vers
 It covers the main data structures of this format that relate to data structure documentation.
 
 
-### Ms Markdown Syntax Reference
+### Microsoft Learn Markdown Syntax Reference
 
 These are the reference links for the syntax of the markdown format.
 
