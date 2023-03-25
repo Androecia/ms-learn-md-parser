@@ -17,3 +17,4 @@ regex = "1.7.1"
 scraper = "0.15.0"
 serde = { version = "1.0.157", features = ["derive"] }
 serde_yaml = "0.9.19"
+url = "2.3.1"

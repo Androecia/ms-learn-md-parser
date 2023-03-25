@@ -50,7 +50,7 @@ pub struct MsMdMetadata {
     /// The more granular service to which the content belongs. Only use if `ms.service` is also used.
     /// This attribute is a way to drill down further in reporting for a given `ms.service`.
     #[serde(rename = "ms.subservice")]
-  pub   ms_subservice: Option<String>,
+    pub ms_subservice: Option<String>,
 
     /// The technology to which the content belongs. Only use if `ms.prod` is also used.
     /// This attribute is a way to drill down further in reporting for a given `ms.prod`.
@@ -81,4 +81,23 @@ pub enum Robots {
     /// Only when you archive an entire content set.
     #[serde(rename = "NOFOLLOW")]
     NoFollow,
+}
+
+impl From<String> for Robots {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "NOINDEX" => Robots::NoIndex,
+            "NOFOLLOW" => Robots::NoFollow,
+            _ => panic!("Unknown robots type: {}", s),
+        }
+    }
+}
+
+impl ToString for Robots {
+    fn to_string(&self) -> String {
+        match self {
+            Robots::NoIndex => "NOINDEX".to_string(),
+            Robots::NoFollow => "NOFOLLOW".to_string(),
+        }
+    }
 }

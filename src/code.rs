@@ -1,34 +1,206 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Code {
-    /// This is read from the file referenced in the source attribute when parsing the :::code syntax
-    pub content: String,
-    /// If not language is specified, this is set to Language::None
-    pub language: Language,
+use crate::Indent;
 
-    // Always available for :::code syntax
-    pub source: Option<String>,
+#[derive(Debug, Clone, PartialEq)]
+pub enum Code {
+
+    Block {
+        content: String,
+        /// If not language is specified, this is set to Language::None
+
+        language: Language,
+        indent: u8,
+    },
+    Reference {
+        content: String,
+        source: String,
+        /// If not language is specified, this is set to Language::None
+        language: Language,
 
     //TODO finish this based on ms md reference
     //:::code language="csharp" source="intro/samples/cu/Controllers/StudentsController.cs" range="2-24,26":::
     //This example displays only lines 2-24 and 26 of the *StudentController.cs* code file.
-    pub range: Option<[u32; 2]>,
 
-    pub id: Option<String>,
+        range: Option<[u32; 2]>,
+        id: Option<String>,
+        highlight: Option<String>,
+        interactive: Option<Interactive>,
+        indent: u8,
+    },
 
-    pub highlight: Option<String>,
-
-    pub interactive: Option<Interactive>,
-
-    pub indent: u8,
 }
+
 
 impl Code {
+
+
+    pub fn new_block(content: String, language: Language, indent: u8) -> Self {
+        Code::Block {
+            content,
+            language,
+            indent,
+        }
+    }
+
+    pub fn new_reference(
+        content: String,
+        source: String,
+        language: Language,
+        indent: u8,
+    ) -> Self {
+        Code::Reference {
+            content,
+            source,
+            language,
+            range: None,
+            id: None,
+            highlight: None,
+            interactive: None,
+            indent,
+        }
+    }
+
+
+    pub fn get_code(&self) -> &str {
+        match self {
+            Code::Block { content, .. } => content,
+            Code::Reference { content, .. } => content,
+        }
+    }
+
+    pub fn get_language(&self) -> &Language {
+        match self {
+            Code::Block { language, .. } => language,
+            Code::Reference { language, .. } => language,
+        }
+    }
+
     pub fn get_source(&self) -> Option<&str> {
-        self.source.as_deref()
+        match self {
+            Code::Block { .. } => None,
+            Code::Reference { source, .. } => Some(source),
+        }
+    }
+
+    pub fn get_range(&self) -> Option<&[u32; 2]> {
+        match self {
+            Code::Block { .. } => None,
+            Code::Reference { range, .. } => range.as_ref(),
+        }
+    }
+
+    pub fn get_id(&self) -> Option<&str> {
+        match self {
+            Code::Block { .. } => None,
+            Code::Reference { id, .. } => id.as_deref(),
+        }
+    }
+
+    pub fn get_highlight(&self) -> Option<&str> {
+        match self {
+            Code::Block { .. } => None,
+            Code::Reference { highlight, .. } => highlight.as_deref(),
+        }
+    }
+
+    pub fn get_interactive(&self) -> Option<&Interactive> {
+        match self {
+            Code::Block { .. } => None,
+            Code::Reference { interactive, .. } => interactive.as_ref(),
+        }
+    }
+
+    pub fn set_range(&mut self, range: Option<[u32; 2]>) {
+        match self {
+            Code::Block { .. } => {}
+            Code::Reference { range: r, .. } => *r = range,
+        }
+    }
+
+    pub fn set_id(&mut self, id: Option<String>) {
+        match self {
+            Code::Block { .. } => {}
+            Code::Reference { id: i, .. } => *i = id,
+        }
+    }
+
+    pub fn set_highlight(&mut self, highlight: Option<String>) {
+        match self {
+            Code::Block { .. } => {}
+            Code::Reference { highlight: h, .. } => *h = highlight,
+        }
+    }
+
+    pub fn set_interactive(&mut self, interactive: Option<Interactive>) {
+        match self {
+            Code::Block { .. } => {}
+            Code::Reference { interactive: i, .. } => *i = interactive,
+        }
+    }
+
+    pub fn set_source(&mut self, source: String) {
+        match self {
+            Code::Block { .. } => {}
+            Code::Reference { source: s, .. } => *s = source,
+        }
+    }
+
+    pub fn set_language(&mut self, language: Language) {
+        match self {
+            Code::Block { language: l, .. } => *l = language,
+            Code::Reference { language: l, .. } => *l = language,
+        }
+    }
+
+    pub fn set_content(&mut self, content: String) {
+        match self {
+            Code::Block { content: c, .. } => *c = content,
+            Code::Reference { content: c, .. } => *c = content,
+        }
+    }
+
+    pub fn set_indent(&mut self, indent: u8) {
+        match self {
+            Code::Block { indent: i, .. } => *i = indent,
+            Code::Reference { indent: i, .. } => *i = indent,
+        }
+    }
+
+    pub fn is_block(&self) -> bool {
+        match self {
+            Code::Block { .. } => true,
+            Code::Reference { .. } => false,
+        }
+    }
+
+    pub fn is_reference(&self) -> bool {
+        match self {
+            Code::Block { .. } => false,
+            Code::Reference { .. } => true,
+        }
+    }
+
+
+
+}
+
+
+impl Indent for Code {
+    fn get_indent(&self) -> u8 {
+        match self {
+            Code::Block { indent, .. } => *indent,
+            Code::Reference { indent, .. } => *indent,
+        }
     }
 }
+
+
+
+
+
+
+
 
 //TODO finish this based on ms md reference
 #[derive(Debug, Clone, PartialEq)]

@@ -547,6 +547,7 @@ dependencies = [
  "scraper",
  "serde",
  "serde_yaml",
+ "url",
 ]
 
 [[package]]

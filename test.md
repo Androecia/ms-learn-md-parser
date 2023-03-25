@@ -472,7 +472,8 @@ This example renders on Microsoft Learn like this:
 
 > [!div class="checklist"]
 > * List item 1
-> * List item 2
+>     * List item 2
+         - List item 3
 > * List item 3
 
 Use checklists at the beginning or end of an article to summarize "What will you learn" or "What have you learned" content. Do not add random checklists throughout your articles.
@@ -1244,6 +1245,45 @@ Represents a Potion Brewing Container Recipe.
 
 ## Parameters
 
+ * e
+   |Name |Type |Description |
+   |:-----------|:-----------|:-----------|
+   |input| potion| Input potion used in the brewing container recipe. |
+   |output| potion| Output potion from the brewing container recipe. |
+   |reagent| item| Item used in the brewing container recipe with the input potion. |
+   |tags|String array | Item that can create the Brewing Container Recipe, such as "brewing_stand". |
+ * eee
+## Potion Brewing Container Recipe Example
+
+> ```JSON
+>{
+>"format_version": "1.17",
+>    "minecraft:recipe_brewing_container": {
+>    "description": {
+>        "identifier": "minecraft:brew_potion_sulphur"
+>    },
+>    "tags": [ "brewing_stand" ],
+>    "input": "minecraft:potion",
+>    "reagent": "minecraft:gunpowder",
+>    "output": "minecraft:splash_potion"
+>     }
+> }
+> ```
+
+## Vanilla Example
+
+### *Brew Potion Sulphur*
+
+:::code language="json" source="../../../../Source/VanillaBehaviorPack/recipes/brew_potion_sulphur.json":::
+
+> |Name |Type |Description |
+> |:-----------|:-----------|:-----------|
+> |input| potion| Input potion used in the brewing container recipe. |
+> |output| potion| Output potion from the brewing container recipe. |
+> |reagent| item| Item used in the brewing container recipe with the input potion. |
+> |tags|String array | Item that can create the Brewing Container Recipe, such as "brewing_stand". |
+
+
 |Name |Type |Description |
 |:-----------|:-----------|:-----------|
 |input| potion| Input potion used in the brewing container recipe. |
@@ -1251,25 +1291,10 @@ Represents a Potion Brewing Container Recipe.
 |reagent| item| Item used in the brewing container recipe with the input potion. |
 |tags|String array | Item that can create the Brewing Container Recipe, such as "brewing_stand". |
 
-## Potion Brewing Container Recipe Example
 
-```JSON
-{
-"format_version": "1.17",
-    "minecraft:recipe_brewing_container": {
-    "description": {
-        "identifier": "minecraft:brew_potion_sulphur"
-    },
-    "tags": [ "brewing_stand" ],
-    "input": "minecraft:potion",
-    "reagent": "minecraft:gunpowder",
-    "output": "minecraft:splash_potion"
-    }
-}
-```
 
-## Vanilla Example
+<xref:UID>
+<xref:UID?displayProperty=nameWithType>
 
-### Brew Potion Sulphur
 
-:::code language="json" source="../../../../Source/VanillaBehaviorPack/recipes/brew_potion_sulphur.json":::
+[link text](xref:UID)
