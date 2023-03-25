@@ -7,10 +7,18 @@ use serde::{Deserialize, Serialize};
 use serde_yaml;
 use std::str::FromStr;
 use std::{collections::HashMap, fmt::Display, fs, path::Path};
+
+
+
 // Internal modules
 mod code;
 mod metadata;
+mod image;
+mod alert;
 
+
+use alert::{Alert, AlertType};
+use image::{Image, PathType};
 use code::{Code, Interactive, Language};
 use metadata::MsMdMetadata;
 // evaluate this syntax before parsing the file
@@ -26,7 +34,26 @@ impl Comment {
     }
 }
 
-use url;
+#[derive(Debug, Clone, PartialEq)]
+pub struct MsMarkdown {
+    pub tokens: Vec<MsMarkdownToken>,
+}
+
+impl MsMarkdown {
+    pub fn new(tokens: Vec<MsMarkdownToken>) -> Self {
+        Self { tokens }
+    }
+
+    pub fn get_metadata(&self) -> Option<&MsMdMetadata> {
+        // return first token if it is metadata
+
+        if let Some(MsMarkdownToken::Metadata(metadata)) = self.tokens.get(0) {
+            return Some(metadata);
+        }
+
+        None
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MsMarkdownToken {
@@ -227,7 +254,7 @@ pub struct Xref {
     pub id: String,
     pub display: Option<String>,
 }
-
+// TODO: Finish this
 struct OpSingleSelector {
     items: Vec<OpSingleSelectorItem>,
 }
@@ -239,135 +266,17 @@ enum OpSelector {
     Multi(),
 }
 
-trait Indent {
+
+
+
+pub trait Indent {
     fn get_indent(&self) -> u8;
 }
 
-trait Content {
+pub trait Content {
     fn get_content(&self) -> &MsMarkdown;
 }
 
-#[derive(Debug, Clone, PartialEq)]
-enum Image {
-    Complex {
-        alt_text: String,
-        source: PathType,
-        /// loc-scope
-        loc_scope: Option<String>,
-        description: Option<MsMarkdown>,
-        /// true by default
-        border: bool,
-    },
-    Content {
-        alt_text: String,
-        source: PathType,
-        /// loc-scope
-        loc_scope: Option<String>,
-        /// true by default
-        border: bool,
-    },
-    Icon {
-        source: PathType,
-        /// not true by default
-        border: bool,
-    },
-    // This is a normal markdown image
-    Simple {
-        alt_text: String,
-        source: PathType,
-    },
-}
-
-impl Image {
-    fn new_complex(
-        alt_text: String,
-        source: PathType,
-        loc_scope: Option<String>,
-        description: Option<MsMarkdown>,
-        border: bool,
-    ) -> Self {
-        Image::Complex {
-            alt_text,
-            source,
-            loc_scope,
-            description,
-            border,
-        }
-    }
-
-    fn new_content(
-        alt_text: String,
-        source: PathType,
-        loc_scope: Option<String>,
-        border: bool,
-    ) -> Self {
-        Image::Content {
-            alt_text,
-            source,
-            loc_scope,
-            border,
-        }
-    }
-
-    fn new_icon(source: PathType, border: bool) -> Self {
-        Image::Icon { source, border }
-    }
-
-    fn new_simple(alt_text: String, source: PathType) -> Self {
-        Image::Simple { alt_text, source }
-    }
-
-    fn get_alt_text(&self) -> &String {
-        match self {
-            Image::Complex { alt_text, .. } => alt_text,
-            Image::Content { alt_text, .. } => alt_text,
-            Image::Icon { .. } => &String::from(""),
-            Image::Simple { alt_text, .. } => alt_text,
-        }
-    }
-
-    fn get_source(&self) -> &PathType {
-        match self {
-            Image::Complex { source, .. } => source,
-            Image::Content { source, .. } => source,
-            Image::Icon { source, .. } => source,
-            Image::Simple { source, .. } => source,
-        }
-    }
-
-    fn get_loc_scope(&self) -> &Option<String> {
-        match self {
-            Image::Complex { loc_scope, .. } => loc_scope,
-            Image::Content { loc_scope, .. } => loc_scope,
-            Image::Icon { .. } => &None,
-            Image::Simple { .. } => &None,
-        }
-    }
-
-    fn get_description(&self) -> &Option<MsMarkdown> {
-        match self {
-            Image::Complex { description, .. } => description,
-            Image::Content { .. } => &None,
-            Image::Icon { .. } => &None,
-            Image::Simple { .. } => &None,
-        }
-    }
-
-    fn get_border(&self) -> bool {
-        match self {
-            Image::Complex { border, .. } => *border,
-            Image::Content { border, .. } => *border,
-            Image::Icon { border, .. } => *border,
-            Image::Simple { .. } => true,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum PathType {
-    Local(String),
-    Remote(url::Url),
-}
 
 pub struct Columns {
     columns: Vec<Column>,
@@ -481,58 +390,54 @@ impl Content for BlockQuote {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum AlertType {
-    Note,
-    Tip,
-    Important,
-    Caution,
-    Warning,
-}
-
-impl ToString for AlertType {
-    fn to_string(&self) -> String {
-        match self {
-            AlertType::Note => "NOTE".to_string(),
-            AlertType::Tip => "TIP".to_string(),
-            AlertType::Important => "IMPORTANT".to_string(),
-            AlertType::Caution => "CAUTION".to_string(),
-            AlertType::Warning => "WARNING".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Alert {
+pub struct ListItem {
     pub indent: u8,
     pub content: MsMarkdown,
-    pub alert_type: AlertType,
 }
 
-impl Alert {
-    pub fn new(indent: u8, content: MsMarkdown, alert_type: AlertType) -> Self {
-        Self {
-            content,
-            alert_type,
-            indent,
-        }
-    }
-
-    pub fn get_type(&self) -> &AlertType {
-        &self.alert_type
+impl ListItem {
+    pub fn new(indent: u8, content: MsMarkdown) -> Self {
+        Self { indent, content }
     }
 }
 
-impl Indent for Alert {
+impl Indent for ListItem {
     fn get_indent(&self) -> u8 {
         self.indent
     }
 }
 
-impl Content for Alert {
+impl Content for ListItem {
     fn get_content(&self) -> &MsMarkdown {
         &self.content
     }
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Column {
+    pub span: Option<u8>,
+    pub content: MsMarkdown, // TODO change to MsMarkdown
+}
+
+impl Column {
+    pub fn new(span: Option<u8>, content: MsMarkdown) -> Self {
+        Self { span, content }
+    }
+
+    pub fn get_span(&self) -> u8 {
+        match self.span {
+            Some(span) => span,
+            None => 1,
+        }
+    }
+}
+
+impl Content for Column {
+    fn get_content(&self) -> &MsMarkdown {
+        &self.content
+    }
+}
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Table {
@@ -554,26 +459,7 @@ impl Table {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct MsMarkdown {
-    pub tokens: Vec<MsMarkdownToken>,
-}
-
-impl MsMarkdown {
-    pub fn new(tokens: Vec<MsMarkdownToken>) -> Self {
-        Self { tokens }
-    }
-
-    pub fn get_metadata(&self) -> Option<&MsMdMetadata> {
-        // return first token if it is metadata
-
-        if let Some(MsMarkdownToken::Metadata(metadata)) = self.tokens.get(0) {
-            return Some(metadata);
-        }
-
-        None
-    }
-}
+// TODO: Migrate the parsers to the individual structs
 
 use html2md::parse_html;
 
@@ -1242,73 +1128,6 @@ enum MsMdTokenType {
 }
 */
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct ListItem {
-    pub indent: u8,
-    pub content: MsMarkdown,
-}
-
-impl ListItem {
-    pub fn new(indent: u8, content: MsMarkdown) -> Self {
-        Self { indent, content }
-    }
-}
-
-impl Indent for ListItem {
-    fn get_indent(&self) -> u8 {
-        self.indent
-    }
-}
-
-impl Content for ListItem {
-    fn get_content(&self) -> &MsMarkdown {
-        &self.content
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Column {
-    pub span: Option<u8>,
-    pub content: MsMarkdown, // TODO change to MsMarkdown
-}
-
-impl Column {
-    pub fn new(span: Option<u8>, content: MsMarkdown) -> Self {
-        Self { span, content }
-    }
-
-    pub fn get_span(&self) -> u8 {
-        match self.span {
-            Some(span) => span,
-            None => 1,
-        }
-    }
-}
-
-impl Content for Column {
-    fn get_content(&self) -> &MsMarkdown {
-        &self.content
-    }
-}
-
-// TODO: Image type
-/*
-#[derive(Debug)]
-pub struct MsMdImage {
-    pub alt_text: String,
-    pub source: String,
-    pub image_type: Option<ImageType>,
-    pub border: bool,
-    pub description: Option<String>,
-}
-
-#[derive(Debug)]
-pub enum ImageType {
-    Complex,
-    Icon,
-    Content,
-}
-*/
 
 /// The generic type <T> is the type of the group name which serializes from a string it defaults to String
 #[derive(Debug, Serialize, Deserialize)]
