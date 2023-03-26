@@ -1,20 +1,2 @@
-[package]
-name = "ms-learn-md-parser"
-version = "0.0.2"
-edition = "2021"
-description = "A parser for Microsoft Learn markdown files."
-license = "MIT"
-
-[lib]
-name = "ms_doc_md_parser"
-path = "src/lib.rs"
-
-[dependencies]
-deno_core = "0.177.0"
-dprint-plugin-markdown = "0.15.2"
-html2md = "0.2.14"
-regex = "1.7.1"
-scraper = "0.15.0"
-serde = { version = "1.0.157", features = ["derive"] }
-serde_yaml = "0.9.19"
-url = "2.3.1"
+[workspace]
+members = ["new_parser", "old_parser"]
