@@ -1,6 +1,7 @@
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use crate::Indent;
+use crate::{Indent, remove_space_indentation};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Code {
@@ -193,6 +194,105 @@ impl Indent for Code {
             Code::Reference { indent, .. } => *indent,
         }
     }
+}
+
+/* */
+impl From<String> for Code {
+
+    fn from(s: String) -> Self {
+        // find first character that is not a space
+        match s.trim().get(0..3) {
+            Some("```") => {
+                let code = Regex::new(r"```(?P<lang>.*?)\r?\n(?P<code>[\s\S]*?)```").unwrap();
+                let code = code.captures(&s).unwrap();
+                let lang = Language::from(code.name("lang").unwrap().as_str().to_string());
+
+                // indent  spaces
+
+                let indentation = s.find(|c: char| !c.is_whitespace()).unwrap();
+
+                let code = code.name("code").unwrap().as_str().to_string();
+
+                // remove the indentation from the code
+
+                Code::new_block(
+                    remove_space_indentation(&code, indentation as u8),
+                    lang,
+                    indentation as u8,
+                )
+            },
+            Some(":::") => {
+                let code =s.trim_start_matches(":::code").trim_end_matches(":::");
+
+                let re_lang = Regex::new(r#"language="(?P<data>.*?)""#).unwrap();
+                let re_source = Regex::new(r#"source="(?P<data>.*?)""#).unwrap();
+                let re_range = Regex::new(r#"range="(?P<data>.*?)""#).unwrap();
+                let re_id = Regex::new(r#"id="(?P<data>.*?)""#).unwrap();
+                let re_highlight = Regex::new(r#"highlight="(?P<data>.*?)""#).unwrap();
+                let re_interactive = Regex::new(r#"interactive="(?P<data>.*?)""#).unwrap();
+
+                //                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
+
+                // get indent spaces ` `
+                let indentation =s.find(|c: char| !c.is_whitespace()).unwrap();
+
+                let mut out = Code::new_reference(
+                    "".to_string(),
+                    re_source
+                        .captures(code)
+                        .unwrap()
+                        .name("data")
+                        .unwrap()
+                        .as_str()
+                        .to_string(),
+                    Language::from(
+                        re_lang
+                            .captures(code)
+                            .unwrap()
+                            .name("data")
+                            .unwrap()
+                            .as_str()
+                            .to_string(),
+                    ),
+                    indentation as u8,
+                );
+
+                if let Some(captures) = re_range.captures(code) {
+                    let range_data: Vec<u32> = captures["data"]
+                        .split('-')
+                        .map(|x| x.parse::<u32>().unwrap())
+                        .collect();
+
+                    if range_data.len() == 2 {
+                        out.set_range(Some([range_data[0], range_data[1]]))
+                    }
+                }
+
+                if let Some(captures) = re_id.captures(code) {
+                    out.set_id(Some(captures["data"].to_string()));
+                }
+
+                if let Some(captures) = re_highlight.captures(code) {
+                    out.set_highlight(Some(captures["data"].to_string()));
+                }
+
+                if let Some(captures) = re_interactive.captures(code) {
+                    out.set_interactive(Some(Interactive::from(captures["data"].to_string())));
+                }
+
+                out
+
+
+
+
+
+
+        }
+    }
+
+}
+
+
 }
 
 

@@ -19,7 +19,7 @@ mod alert;
 
 use alert::{Alert, AlertType};
 use image::{Image, PathType};
-use code::{Code, Interactive, Language};
+use code::{Code, };
 use metadata::MsMdMetadata;
 // evaluate this syntax before parsing the file
 //TODO  \[!INCLUDE \[.+\]\(.+\)]
@@ -33,6 +33,43 @@ impl Comment {
         Self { content }
     }
 }
+
+
+impl Markdown for Comment {
+
+}
+
+impl Display for Comment {
+
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<!-- {} -->", self.content)
+    }
+
+
+}
+
+
+
+impl From<String> for Comment {
+    fn from(content: String) -> Self {
+
+// extract the comment its like an html comment with regex
+                    // <!-- comment -->
+                    let comment = Regex::new(r"<!--(?P<comment>[\s\S]*?)-->").unwrap();
+                    let comment = comment
+                        .captures(&content)
+                        .unwrap()
+                        .name("comment")
+                        .unwrap()
+                        .as_str();
+
+        Self::new(comment.to_string())
+
+    }
+}
+
+
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MsMarkdown {
@@ -95,6 +132,10 @@ pub enum Inline {
     // further parsing
     Xref(String),
 }
+
+
+
+
 
 impl Inline {
     pub fn new_text(text: String) -> Self {
@@ -220,11 +261,18 @@ impl Inline {
     }
 }
 
+
+
+
 #[derive(Debug, Clone, PartialEq)]
 struct TextBlock {
     content: String,
     indent: u8,
 }
+
+
+
+
 // TODO: REMOVE This after Inline is implemented
 impl TextBlock {
     fn new(text: String, indent: u8) -> Self {
@@ -321,6 +369,8 @@ struct Anchor {
     pub id: Option<String>,
 }
 
+
+
 impl Anchor {
     pub fn new(name: Option<String>, id: Option<String>) -> Self {
         Self { name, id }
@@ -334,6 +384,15 @@ impl Anchor {
         &self.id
     }
 }
+
+
+
+trait Markdown:From<String>+Display {
+
+}
+
+
+
 
 /// ## <a id="anchortext" />Header text
 #[derive(Debug, Clone, PartialEq)]
@@ -459,6 +518,72 @@ impl Table {
     }
 }
 
+impl From<String> for Table {
+    fn from(s:String ) -> Self{
+
+
+        let mut s = &s;
+
+
+        if s.trim().starts_with("<") {
+            s = &html2md::parse_html(s.as_str());
+        }
+
+
+        let table_str = s
+
+                        .replace("> |", "|")
+                        .replace("| ", "|")
+                        .replace(" |", "|");
+                    let mut lines = table_str.lines().collect::<Vec<_>>();
+                    let headers_line = lines.remove(0);
+                    let headers = headers_line.split("|").collect::<Vec<_>>();
+
+                    let mut table_data = Vec::new();
+
+                    for line in lines {
+                        if line.trim().is_empty()
+                            || line.starts_with("|--")
+                            || line.starts_with("|:--")
+                        {
+                            continue;
+                        }
+
+                        let row_data = line.split("|").collect::<Vec<_>>();
+                        let mut row_map = HashMap::new();
+
+                        for (header, cell) in headers.iter().zip(row_data.iter()) {
+                            // check if both are empty if so continue
+                            if header.trim().is_empty() && cell.trim().is_empty() {
+                                continue;
+                            }
+
+                            row_map.insert(header.trim().to_string(), cell.trim().to_string());
+                        }
+
+                        table_data.push(row_map);
+                    }
+
+                    Self::new(0, table_data)
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // TODO: Migrate the parsers to the individual structs
 
 use html2md::parse_html;
@@ -501,16 +626,7 @@ impl From<&Path> for MsMarkdown {
                     tokens.push(MsMarkdownToken::Metadata(metadata));
                 }
                 MsMdRegexGroup::Comment => {
-                    // extract the comment its like an html comment with regex
-                    // <!-- comment -->
-                    let comment = Regex::new(r"<!--(?P<comment>[\s\S]*?)-->").unwrap();
-                    let comment = comment
-                        .captures(&m.text)
-                        .unwrap()
-                        .name("comment")
-                        .unwrap()
-                        .as_str();
-                    tokens.push(MsMarkdownToken::Comment(Comment::new(comment.to_string())));
+                    tokens.push(MsMarkdownToken::Comment( Comment::from(m.text)));
                 }
                 MsMdRegexGroup::Heading => {
                     // extract the heading
@@ -533,84 +649,15 @@ impl From<&Path> for MsMarkdown {
                 }
 
                 MsMdRegexGroup::CodeBlock => {
-                    let code = Regex::new(r"```(?P<lang>.*?)\r?\n(?P<code>[\s\S]*?)```").unwrap();
-                    let code = code.captures(&m.text).unwrap();
-                    let lang = Language::from(code.name("lang").unwrap().as_str().to_string());
 
-                    // indent  spaces
 
-                    let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
-
-                    let code = code.name("code").unwrap().as_str().to_string();
-
-                    // remove the indentation from the code
-
-                    let code_block: Code = Code::new_block(
-                        remove_space_indentation(&code, indentation as u8),
-                        lang,
-                        indentation as u8,
-                    );
-
-                    tokens.push(MsMarkdownToken::Code(code_block));
+                    tokens.push(MsMarkdownToken::Code(Code::from(m.text)));
                 }
                 MsMdRegexGroup::CodeExt => {
-                    let code = m.text.trim_start_matches(":::code").trim_end_matches(":::");
 
-                    let re_lang = Regex::new(r#"language="(?P<data>.*?)""#).unwrap();
-                    let re_source = Regex::new(r#"source="(?P<data>.*?)""#).unwrap();
-                    let re_range = Regex::new(r#"range="(?P<data>.*?)""#).unwrap();
-                    let re_id = Regex::new(r#"id="(?P<data>.*?)""#).unwrap();
-                    let re_highlight = Regex::new(r#"highlight="(?P<data>.*?)""#).unwrap();
-                    let re_interactive = Regex::new(r#"interactive="(?P<data>.*?)""#).unwrap();
 
-                    //                let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
 
-                    // get indent spaces ` `
-                    let indentation = m.text.find(|c: char| !c.is_whitespace()).unwrap();
-
-                    let mut out = Code::new_reference(
-                        "".to_string(),
-                        re_source
-                            .captures(code)
-                            .unwrap()
-                            .name("data")
-                            .unwrap()
-                            .as_str()
-                            .to_string(),
-                        Language::from(
-                            re_lang
-                                .captures(code)
-                                .unwrap()
-                                .name("data")
-                                .unwrap()
-                                .as_str()
-                                .to_string(),
-                        ),
-                        indentation as u8,
-                    );
-
-                    if let Some(captures) = re_range.captures(code) {
-                        let range_data: Vec<u32> = captures["data"]
-                            .split('-')
-                            .map(|x| x.parse::<u32>().unwrap())
-                            .collect();
-
-                        if range_data.len() == 2 {
-                            out.set_range(Some([range_data[0], range_data[1]]))
-                        }
-                    }
-
-                    if let Some(captures) = re_id.captures(code) {
-                        out.set_id(Some(captures["data"].to_string()));
-                    }
-
-                    if let Some(captures) = re_highlight.captures(code) {
-                        out.set_highlight(Some(captures["data"].to_string()));
-                    }
-
-                    if let Some(captures) = re_interactive.captures(code) {
-                        out.set_interactive(Some(Interactive::from(captures["data"].to_string())));
-                    }
+                    let out = Code::from(m.text);
 
                     let source_file_path = path.parent().unwrap().join(out.get_source().unwrap());
 
@@ -646,76 +693,9 @@ impl From<&Path> for MsMarkdown {
                 }
 
                 MsMdRegexGroup::MdTable => {
-                    let table_str = m
-                        .text
-                        .replace("> |", "|")
-                        .replace("| ", "|")
-                        .replace(" |", "|");
-                    let mut lines = table_str.lines().collect::<Vec<_>>();
-                    let headers_line = lines.remove(0);
-                    let headers = headers_line.split("|").collect::<Vec<_>>();
 
-                    // Check if all headers are empty
-
-                    let is_headers_empty = headers.iter().all(|x| x.trim().is_empty());
-
-                    if is_headers_empty {
-                        let mut table_data: Vec<Vec<String>> = Vec::new();
-
-                        for line in lines {
-                            if line.trim().is_empty()
-                                || line.starts_with("|--")
-                                || line.starts_with("|:--")
-                            {
-                                continue;
-                            }
-
-                            let row_data = line.split("|").collect::<Vec<_>>();
-                            let mut row_map = Vec::new();
-
-                            for cell in row_data.iter() {
-                                // check if both are empty if so continue
-                                if cell.trim().is_empty() {
-                                    continue;
-                                }
-
-                                row_map.push(cell.trim().to_string());
-                            }
-
-                            table_data.push(row_map);
-                        }
-
-                        panic!("empty headers");
-
-                        //   tokens.push(MsMarkdownToken::Table(Table::new(0,  table_data)));
-                        continue;
-                    }
-                    let mut table_data = Vec::new();
-
-                    for line in lines {
-                        if line.trim().is_empty()
-                            || line.starts_with("|--")
-                            || line.starts_with("|:--")
-                        {
-                            continue;
-                        }
-
-                        let row_data = line.split("|").collect::<Vec<_>>();
-                        let mut row_map = HashMap::new();
-
-                        for (header, cell) in headers.iter().zip(row_data.iter()) {
-                            // check if both are empty if so continue
-                            if header.trim().is_empty() && cell.trim().is_empty() {
-                                continue;
-                            }
-
-                            row_map.insert(header.trim().to_string(), cell.trim().to_string());
-                        }
-
-                        table_data.push(row_map);
-                    }
                     // TODO: Indents?
-                    tokens.push(MsMarkdownToken::Table(Table::new(0, table_data)));
+                    tokens.push(MsMarkdownToken::Table(Table::from(m.text)));
                 }
 
                 MsMdRegexGroup::HtmlTable => {
@@ -977,7 +957,6 @@ impl From<&Path> for MsMarkdown {
                             content: content.to_string(),
                         });
                     }
-
                     tokens.push(MsMarkdownToken::List(items));
                 }
                 MsMdRegexGroup::HorizontalLine => {
